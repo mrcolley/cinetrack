@@ -4,10 +4,14 @@ A local-first web application for importing, inspecting, and analysing your IMDb
 
 ## Features
 
-- **Import** ratings via your public IMDb user ID or by uploading a `ratings.csv` export directly.
+- **Import** ratings via your IMDb profile URL or by uploading a `ratings.csv` export directly.
 - **Inspect & Filter** your data with a rating range slider, title search, and column selector.
 - **Export** the filtered view as a UTF-8 CSV or a named Excel worksheet.
-- **Analytics Dashboard** — rating distribution, genre affinity, and critical divergence matrix.
+- **Analytics Dashboard** — four sections:
+  - 📊 Rating distribution, mean, median, total count
+  - 🎭 Genre affinity — top 10 genres by volume and average score
+  - ⚡ Critical divergence — films you rate wildly differently from IMDb
+  - 🌟 Hidden gems — films you loved that the world underrated (tunable thresholds)
 
 ---
 

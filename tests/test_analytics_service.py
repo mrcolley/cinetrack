@@ -10,6 +10,7 @@ from src.services.analytics_service import (
     calculate_rating_distribution,
     compute_critical_divergence,
     compute_genre_breakdown,
+    suggest_hidden_gems,
 )
 from src.services.data_service import parse_imdb_csv
 
@@ -253,3 +254,98 @@ def test_integration_parse_to_divergence(sample_csv_string):
     result = compute_critical_divergence(df)
     assert "hot_takes" in result
     assert "hidden_dislikes" in result
+
+
+# ---------------------------------------------------------------------------
+# suggest_hidden_gems
+# ---------------------------------------------------------------------------
+
+
+def _make_gems_df(rows):
+    """Helper: build a DataFrame from list of (title, your_rating, imdb_rating) tuples."""
+    return pd.DataFrame(rows, columns=["Title", "Your_Rating", "IMDb_Rating"])
+
+
+def test_hidden_gems_basic():
+    df = _make_gems_df([
+        ("Loved It", 9, 6.5),   # gem — high personal, low IMDb
+        ("Mainstream", 9, 8.5), # not a gem — IMDb too high
+        ("Disliked", 4, 5.0),   # not a gem — personal rating too low
+    ])
+    result = suggest_hidden_gems(df)
+    assert len(result) == 1
+    assert result["Title"].iloc[0] == "Loved It"
+
+
+def test_hidden_gems_exact_boundary_included():
+    df = _make_gems_df([("Edge", 8, 7.0)])
+    result = suggest_hidden_gems(df, min_user_rating=8, max_imdb_rating=7.0)
+    assert len(result) == 1
+
+
+def test_hidden_gems_just_outside_boundary_excluded():
+    df = _make_gems_df([("Close", 7, 6.9)])
+    result = suggest_hidden_gems(df, min_user_rating=8, max_imdb_rating=7.0)
+    assert len(result) == 0
+
+
+def test_hidden_gems_sorted_by_your_rating_desc():
+    df = _make_gems_df([
+        ("B", 8, 5.0),
+        ("A", 10, 4.0),
+        ("C", 9, 6.0),
+    ])
+    result = suggest_hidden_gems(df, min_user_rating=8, max_imdb_rating=7.0)
+    assert list(result["Your_Rating"]) == [10, 9, 8]
+
+
+def test_hidden_gems_tiebreak_by_imdb_rating_asc():
+    df = _make_gems_df([
+        ("High IMDb", 9, 6.5),
+        ("Low IMDb", 9, 4.0),
+    ])
+    result = suggest_hidden_gems(df, min_user_rating=8, max_imdb_rating=7.0)
+    assert result["Title"].iloc[0] == "Low IMDb"
+
+
+def test_hidden_gems_gap_column_present():
+    df = _make_gems_df([("Film", 9, 5.0)])
+    result = suggest_hidden_gems(df, min_user_rating=8, max_imdb_rating=7.0)
+    assert "Gap" in result.columns
+    assert result["Gap"].iloc[0] == 4.0
+
+
+def test_hidden_gems_null_imdb_rating_excluded():
+    df = _make_gems_df([("No IMDb", 9, None), ("Has IMDb", 9, 5.0)])
+    result = suggest_hidden_gems(df, min_user_rating=8, max_imdb_rating=7.0)
+    assert len(result) == 1
+    assert result["Title"].iloc[0] == "Has IMDb"
+
+
+def test_hidden_gems_empty_dataframe():
+    result = suggest_hidden_gems(pd.DataFrame())
+    assert isinstance(result, pd.DataFrame)
+    assert len(result) == 0
+
+
+def test_hidden_gems_custom_thresholds():
+    df = _make_gems_df([
+        ("Super Niche", 10, 4.0),
+        ("Pretty Good", 8, 6.5),
+    ])
+    # Tighter threshold — only absolute gems
+    result = suggest_hidden_gems(df, min_user_rating=10, max_imdb_rating=5.0)
+    assert len(result) == 1
+    assert result["Title"].iloc[0] == "Super Niche"
+
+
+def test_hidden_gems_integration(sample_csv_string):
+    """parse_imdb_csv output feeds cleanly into suggest_hidden_gems."""
+    from src.services.data_service import parse_imdb_csv
+    df = parse_imdb_csv(sample_csv_string)
+    result = suggest_hidden_gems(df, min_user_rating=8, max_imdb_rating=7.0)
+    assert isinstance(result, pd.DataFrame)
+    # All returned rows must satisfy the threshold criteria
+    if not result.empty:
+        assert (result["Your_Rating"] >= 8).all()
+        assert (result["IMDb_Rating"] <= 7.0).all()

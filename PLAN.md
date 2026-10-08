@@ -148,6 +148,12 @@ exists.
     - `hot_takes`: rows where `Delta >= threshold`, sorted by `Delta` descending.
     - `hidden_dislikes`: rows where `Delta <= −threshold`, sorted by `Delta` ascending.
     - Returns `{"hot_takes": ..., "hidden_dislikes": ...}`.
+  - `suggest_hidden_gems(df: pd.DataFrame, min_user_rating: int = 8, max_imdb_rating: float = 7.0) -> pd.DataFrame`
+    - Surfaces films the user rated highly that IMDb underestimates.
+    - Filters rows where `Your_Rating >= min_user_rating` AND `IMDb_Rating <= max_imdb_rating`.
+    - Adds a `Gap` column (`Your_Rating − IMDb_Rating`).
+    - Sorts by `Your_Rating` descending, `IMDb_Rating` ascending as tiebreaker.
+    - Returns filtered DataFrame; empty if no qualifying rows or missing columns.
 - **Dependencies:** `pandas`, `src/utils/constants.py`.
 
 ---
@@ -397,11 +403,11 @@ pytest tests/test_imdb_service.py tests/test_data_service.py tests/test_analytic
 
 **Expected output when passing:**
 ```
-tests/test_imdb_service.py::test_extract_user_id_valid_bare PASSED
+tests/test_imdb_service.py::test_extract_user_id_valid_bare_numeric PASSED
 ...
-tests/test_analytics_service.py::test_critical_divergence_empty_dataframe PASSED
+tests/test_analytics_service.py::test_hidden_gems_integration PASSED
 
-XX passed in X.XXs
+89 passed in X.XXs
 ```
 
 ### Run End-to-End Tests
@@ -438,15 +444,16 @@ pytest tests/ --cov=src --cov-report=term-missing
 
 | # | Sub-task | Status |
 |---|---|---|
-| 1 | Create `requirements.txt`, `.gitignore`, `README.md` | [ ] pending |
-| 2 | Create all `__init__.py` package files | [ ] pending |
-| 3 | Implement `src/utils/constants.py` | [ ] pending |
-| 4 | Implement `src/services/imdb_service.py` | [ ] pending |
-| 5 | Implement `src/services/data_service.py` | [ ] pending |
-| 6 | Implement `src/services/analytics_service.py` | [ ] pending |
-| 7 | Implement `app.py` | [ ] pending |
-| 8 | Implement `tests/conftest.py` | [ ] pending |
-| 9 | Implement `tests/test_imdb_service.py` | [ ] pending |
-| 10 | Implement `tests/test_data_service.py` | [ ] pending |
-| 11 | Implement `tests/test_analytics_service.py` | [ ] pending |
-| 12 | Implement `tests/test_e2e.py` | [ ] pending |
+| 1 | Create `requirements.txt`, `.gitignore`, `README.md` | [x] done |
+| 2 | Create all `__init__.py` package files | [x] done |
+| 3 | Implement `src/utils/constants.py` | [x] done |
+| 4 | Implement `src/services/imdb_service.py` | [x] done |
+| 5 | Implement `src/services/data_service.py` | [x] done |
+| 6 | Implement `src/services/analytics_service.py` | [x] done |
+| 7 | Implement `app.py` | [x] done |
+| 8 | Implement `tests/conftest.py` | [x] done |
+| 9 | Implement `tests/test_imdb_service.py` | [x] done |
+| 10 | Implement `tests/test_data_service.py` | [x] done |
+| 11 | Implement `tests/test_analytics_service.py` | [x] done |
+| 12 | Implement `tests/test_e2e.py` | [x] done |
+| 13 | Post-launch: `suggest_hidden_gems` + UI section + 11 new tests | [x] done |

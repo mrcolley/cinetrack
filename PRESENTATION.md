@@ -22,10 +22,11 @@ A local-first web application that:
 - **Imports** your IMDb ratings via your profile URL or a direct CSV upload
 - **Inspects and filters** your data with a live rating slider, title search, and column selector
 - **Exports** the filtered view as UTF-8 CSV or a named Excel workbook
-- **Analyses your taste** across three dashboards:
+- **Analyses your taste** across four dashboards:
   - 📊 Rating distribution (bar chart, mean, median, total count)
   - 🎭 Genre affinity — your top 10 genres by volume and average score
   - ⚡ Critical divergence — films you rate wildly differently from the IMDb crowd
+  - 🌟 Hidden gems — films you loved that the world overlooked (tunable thresholds)
 
 ### Tech Stack
 
@@ -107,13 +108,14 @@ Each iteration left the test suite green.
 | Metric | Value |
 |---|---|
 | Files created | 14 Python files + config |
-| Lines of application code | ~650 |
-| Lines of test code | ~620 |
-| Test cases | 78 |
+| Lines of application code | ~700 |
+| Lines of test code | ~720 |
+| Test cases | 89 |
 | Test pass rate | 100% |
 | Conversation turns to first passing tests | ~15 |
 | Bugs caught by tests | 3 |
 | Real-world issues caught post-launch | 4 |
+| Post-launch features added | 1 |
 
 ---
 
@@ -123,7 +125,7 @@ Each iteration left the test suite green.
 
 **Honest about limitations.** When the IMDb WAF blocked all programmatic requests — a fact not in the spec — Bob ran a live diagnostic, read the response body, identified the 202 + AWS WAF CAPTCHA pattern, and told the truth: *"this cannot be made to work with requests."* It then proposed and built a better alternative.
 
-**Tests as a safety net.** The 78-test suite caught three real bugs before the app was ever run: the CSV quoting issue, the regex over-matching, and the wrong assumption about IMDb ID format. Without tests, all three would have been silent data corruption or runtime crashes.
+**Tests as a safety net.** The 89-test suite caught three real bugs before the app was ever run: the CSV quoting issue, the regex over-matching, and the wrong assumption about IMDb ID format. Without tests, all three would have been silent data corruption or runtime crashes.
 
 **Minimal changes.** Every fix touched exactly the lines that needed changing. No refactors, no cleanups, no "while I'm here" additions.
 
@@ -155,7 +157,7 @@ python -m streamlit run app.py
 
 # Run the tests
 .venv\Scripts\pytest.exe tests/ -v
-# → 78 passed
+# → 89 passed
 ```
 
 ---
@@ -173,13 +175,13 @@ my-spec-project/
 │   ├── services/
 │   │   ├── imdb_service.py         ← ID parsing, HTTP, BS4
 │   │   ├── data_service.py         ← CSV parsing, filtering, Excel export
-│   │   └── analytics_service.py    ← distribution, genres, divergence
+│   │   └── analytics_service.py    ← distribution, genres, divergence, hidden gems
 │   └── utils/constants.py
 └── tests/
     ├── conftest.py
     ├── test_imdb_service.py        ← 20 tests
     ├── test_data_service.py        ← 27 tests
-    ├── test_analytics_service.py   ← 31 tests
+    ├── test_analytics_service.py   ← 39 tests
     └── test_e2e.py                 ← 9 end-to-end tests
 ```
 

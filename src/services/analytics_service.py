@@ -124,3 +124,50 @@ def compute_critical_divergence(
     )
 
     return {"hot_takes": hot_takes, "hidden_dislikes": hidden_dislikes}
+
+
+
+# ---------------------------------------------------------------------------
+# Hidden gems recommendation
+# ---------------------------------------------------------------------------
+
+
+def suggest_hidden_gems(
+    df: pd.DataFrame,
+    min_user_rating: int = 8,
+    max_imdb_rating: float = 7.0,
+) -> pd.DataFrame:
+    """
+    Surfaces films the user rated highly that the IMDb crowd underestimates.
+
+    A "hidden gem" is a title where:
+      - Your_Rating >= min_user_rating  (you loved it)
+      - IMDb_Rating <= max_imdb_rating  (the world hasn't caught up)
+
+    Rows with missing IMDb_Rating are excluded.
+    Results are sorted by Your_Rating descending, then by IMDb_Rating ascending
+    (highest personal score first; lowest IMDb rating as tiebreaker).
+
+    Returns a DataFrame with columns preserved from the input, plus a
+    computed 'Gap' column (Your_Rating - IMDb_Rating).
+    """
+    required = {"Your_Rating", "IMDb_Rating"}
+    if not required.issubset(df.columns) or df.empty:
+        return pd.DataFrame()
+
+    work = df.dropna(subset=["IMDb_Rating"]).copy()
+
+    gems = work[
+        (work["Your_Rating"].astype(float) >= min_user_rating)
+        & (work["IMDb_Rating"].astype(float) <= max_imdb_rating)
+    ].copy()
+
+    gems["Gap"] = gems["Your_Rating"].astype(float) - gems["IMDb_Rating"].astype(float)
+
+    return (
+        gems.sort_values(
+            ["Your_Rating", "IMDb_Rating"],
+            ascending=[False, True],
+        )
+        .reset_index(drop=True)
+    )

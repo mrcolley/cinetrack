@@ -12,6 +12,7 @@ from src.services.analytics_service import (
     calculate_rating_distribution,
     compute_critical_divergence,
     compute_genre_breakdown,
+    suggest_hidden_gems,
 )
 from src.services.data_service import export_to_excel_buffer, filter_ratings, parse_imdb_csv
 from src.services.imdb_service import extract_user_id
@@ -277,3 +278,37 @@ with tab_analytics:
         else:
             display_cols = [c for c in ["Title", "Your_Rating", "IMDb_Rating", "Delta"] if c in cold.columns]
             st.dataframe(cold[display_cols], use_container_width=True)
+
+    st.divider()
+    st.subheader("🌟 Your Hidden Gems")
+    st.caption(
+        "Films you rated **8 or higher** that IMDb rates **7.0 or below** — "
+        "your personal favourites the world hasn't discovered yet."
+    )
+
+    gem_col1, gem_col2 = st.columns([1, 1])
+    with gem_col1:
+        min_user_rating = st.slider(
+            "Minimum your rating", min_value=1, max_value=10, value=8, key="gem_min"
+        )
+    with gem_col2:
+        max_imdb_rating = st.slider(
+            "Maximum IMDb rating", min_value=1.0, max_value=10.0, value=7.0,
+            step=0.5, key="gem_max"
+        )
+
+    gems = suggest_hidden_gems(
+        analytics_df,
+        min_user_rating=min_user_rating,
+        max_imdb_rating=max_imdb_rating,
+    )
+
+    if gems.empty:
+        st.info(
+            "No hidden gems found for the current settings. "
+            "Try lowering the IMDb rating threshold or the minimum personal rating."
+        )
+    else:
+        st.success(f"Found **{len(gems)}** hidden gem{'s' if len(gems) != 1 else ''}! 💎")
+        display_cols = [c for c in ["Title", "Year", "Your_Rating", "IMDb_Rating", "Gap", "Genres"] if c in gems.columns]
+        st.dataframe(gems[display_cols], use_container_width=True)
